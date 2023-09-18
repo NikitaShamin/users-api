@@ -8,7 +8,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class UserController extends AbstractController
 {
@@ -19,9 +18,6 @@ class UserController extends AbstractController
         $this->userService = $userService;
     }
 
-    /**
-     * List of users.
-     */
     #[Route('/users/list', name: 'user_list', methods: ["GET"])]
     public function list(Request $request): JsonResponse
     {
@@ -33,7 +29,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/users', name: 'user_create', methods: ["POST"])]
-    public function create(Request $request, ValidatorInterface $validator): JsonResponse
+    public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $user = (new User())->deserialize($data);
