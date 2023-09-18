@@ -48,5 +48,5 @@ docker-compose exec container_name php bin/console doctrine:migrations:migrate
 Запустите приложение командой. Доступно по адресу localhost:8000.
 
 ```bash
-symfony serve
+symfony server:start
 ```

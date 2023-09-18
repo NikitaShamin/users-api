@@ -36,7 +36,7 @@ class UserRepository extends ServiceEntityRepository
             $this->entityManager->flush();
             $this->entityManager->commit();
         } 
-        catch (\Exception $e) 
+        catch (\Exception $exception) 
         {
             $this->entityManager->rollback();
         }
@@ -52,7 +52,7 @@ class UserRepository extends ServiceEntityRepository
             $this->entityManager->flush();
             $this->entityManager->commit();
         } 
-        catch (\Exception $e) 
+        catch (\Exception $exception) 
         {
             $this->entityManager->rollback();
         }

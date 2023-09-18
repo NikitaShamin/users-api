@@ -4,13 +4,13 @@ namespace App\Service;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class UserService
 {
-    private $userRepository;
-
-    private $validator;
+    private UserRepository $userRepository;
+    private ValidatorInterface $validator;
 
     public function __construct(UserRepository $userRepository, ValidatorInterface $validator)
     {
@@ -18,88 +18,55 @@ class UserService
         $this->validator = $validator;
     }
 
-    public function createUser(User $user) : mixed
+    public function createUser(User $user): array
     {
-        $response = [];
-        $errors = $this->validator->validate($user);
+        $errors = $this->validateUser($user);
 
-        if ($errors->count() > 0) 
-        {
-            $errorMessages = [];
-            foreach ($errors as $error) 
-            {
-                $errorMessages[] = $error->getPropertyPath() . ": " . $error->getMessage();
-            }
-
-            $response = ['success' => false, 'errors' => $errorMessages];
-        }
-        else
-        {
-            $this->userRepository->save($user);
-            $response = ['success' => true, "instance" => $user->jsonSerialize()];
+        if (count($errors) > 0) {
+            return ['errors' => $errors];
         }
 
-        return $response;
+        $this->userRepository->save($user);
+
+        return ['instance' => $user->jsonSerialize()];
     }
 
-    public function updateUser(int $id, mixed $data) : mixed
+    public function updateUser(int $id, mixed $data): array
     {
-        $response = [];
-
         $user = $this->userRepository->find($id);
-        if ($user)
-        {
-            $user->deserialize($data);
-            $user->setUpdatedAt(new \DateTimeImmutable());
 
-            $errors = $this->validator->validate($user);
+        $user->deserialize($data);
+        $user->setUpdatedAt(new \DateTimeImmutable());
 
-            if ($errors->count() > 0) 
-            {
-                $errorMessages = [];
-                foreach ($errors as $error) 
-                {
-                    $errorMessages[] = $error->getPropertyPath() . ": " . $error->getMessage();
-                }
+        $errors = $this->validateUser($user);
 
-                $response = ['success' => false, 'errors' => $errorMessages];
-            }
-            else
-            {
-                $this->userRepository->save($user);
-                $response = ['success' => true, "instance" => $user->jsonSerialize()];
-            }
-        }
-        else
-        {
-            $response = ['success' => false, 'errors' => ["User not found by ID"]];
+        if (count($errors) > 0) {
+            return ['errors' => $errors];
         }
 
-        return $response;
+        $this->userRepository->save($user);
+
+        return ['instance' => $user->jsonSerialize()];
     }
 
-    public function deleteUser(int $id)
+    public function deleteUser(int $id): array
     {
-        $response = [];
-
         $user = $this->userRepository->find($id);
-        if ($user)
-        {
-            $this->userRepository->delete($user);
-            $response = ['success' => true, 'user_id' => $id];
-        }
-        else
-        {
-            $response = ['success' => false, 'errors' => ["User not found by ID"]];
-        }
+        $this->userRepository->delete($user);
 
-        return $response;
+        return ['user_id' => $id];
     }
 
-    public function getUserById(int $id): mixed
+    public function getUserById(int $id): array
     {
         $user = $this->userRepository->find($id);
-        return ['success' => true, 'instance' => $user];
+
+        if (!$user) 
+        {
+            throw new NotFoundHttpException('User not found by ID');
+        }
+
+        return ["instance" => $user];
     }
 
     public function getAllUsers(int $page, int $limit): array
@@ -107,6 +74,19 @@ class UserService
         $paginator = $this->userRepository->findAllPaginated($page, $limit);
         $users = iterator_to_array($paginator);
 
-        return ['success' => true, 'users' => $users];
+        return ['users' => $users];
+    }
+
+    private function validateUser(User $user): array
+    {
+        $errors = $this->validator->validate($user);
+        $errorMessages = [];
+
+        foreach ($errors as $error) 
+        {
+            $errorMessages[] = $error->getPropertyPath() . ': ' . $error->getMessage();
+        }
+
+        return $errorMessages;
     }
 }
